@@ -18,13 +18,11 @@ NullImplIRPV11::~NullImplIRPV11() {}
 ReturnStatus
 NullImplIRPV11::initialize(const std::string &configDir)
 {
-    this->counter = 0;
     return ReturnStatus(ReturnCode::Success);
 }
 
 ReturnStatus
-NullImplIRPV11::createTemplate(
-        const Image &face,
+NullImplIRPV11::createTemplate(const Image &image,
         TemplateRole role,
         std::vector<uint8_t> &templ)
 {

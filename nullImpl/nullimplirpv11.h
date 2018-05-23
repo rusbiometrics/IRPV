@@ -25,7 +25,7 @@ public:
 
     ReturnStatus
     createTemplate(
-            const Image &face,
+            const Image &image,
             TemplateRole role,
             std::vector<uint8_t> &templ) override;
 
@@ -35,12 +35,7 @@ public:
             const std::vector<uint8_t> &enrollTemplate,
             double &similarity) override;
 
-    static std::shared_ptr<IRPV::VerifInterface>
-    getImplementation();
-
 private:
-    std::string configDir;
-    int counter;
     // Some other members
 };
 }
