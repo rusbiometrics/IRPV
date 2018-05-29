@@ -1,10 +1,5 @@
-# Image recogbition performance verification
+# Image recognition performance verification
 
-This project seeks to identify which algorithms are most accurate at recognizing images collected in an unconstrained manner.
+Здесь располагается API технологических испытаний простой верификации для алгоритмов распознавания изображений различных биометрических модальностей
 
-Here you can find:
- 
- - nullImpl - dummy example of verification API interface implementation
- 
- - irpv.h - header file that should be included as reference for verification API interface implementation
- 
+Краткое руководство пользователя находится в [wiki](https://github.com/rusbiometrics/IRPV/wiki)-разделе проекта
