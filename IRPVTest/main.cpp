@@ -97,13 +97,17 @@ int main(int argc, char *argv[])
         }
     }
     std::cout << "  Valid subdirs: " << validsubdirs << std::endl;
-    if(validsubdirs < 1) {
-        std::cerr << std::endl << "There is not enough subdirs/files in the input directory to perform test!" << std::endl;
+    if(validsubdirs*etpp == 0) {
+        std::cerr << std::endl << "There is 0 enrollment templates! Test could not be performed! Abort..." << std::endl;
         return 5;
     }
     QStringList distractorfiles = indir.entryList(filefilters,QDir::Files | QDir::NoDotAndDotDot);
     const uint distractors = distractorfiles.size();
     std::cout << "  Distractor files: " << distractors << std::endl;
+    if((validsubdirs*vtpp + distractors) == 0) {
+        std::cerr << std::endl << "There is 0 verification templates! Test could not be performed! Abort..." << std::endl;
+        return 6;
+    }
 
     QElapsedTimer elapsedtimer;
     // Let's try to init Vendor's API
@@ -118,17 +122,17 @@ int main(int argc, char *argv[])
     if(status.code != IRPV::ReturnCode::Success) {
         std::cout << "Vendor's error description: " << status.info << std::endl;
         std::cout << "Can not initialize Vendor's API! Abort..." << std::endl;
-        return 6;
+        return 7;
     }
 
     // We need also check if output file does not exist
     QFile outputfile(outdir.absolutePath().append("/%1.json").arg(VENDOR_API_NAME));
     if(outputfile.exists()) {
         std::cerr << "Output file already exists in the target location! Abort...";
-        return 7;
+        return 8;
     } else if(outputfile.open(QFile::WriteOnly) == false) { // and could be opened
         std::cerr << "Can not open output file for write! Abort...";
-        return 8;
+        return 9;
     }
 
     // Seems that all requirements are matched, let's start the test
@@ -271,7 +275,9 @@ int main(int argc, char *argv[])
     std::cout << std::endl << "Stage 5 - ROC computation" << std::endl;
 
     // But first let's release unused memory
+    uint etsizebytes = etemplates[0].data.size();
     etemplates.clear();
+    uint vtsizebytes = vtemplates[0].data.size();
     vtemplates.clear();   
 
     std::vector<ROCPoint> vROC = std::move( computeROC(rocpoints,
@@ -319,7 +325,8 @@ int main(int argc, char *argv[])
                             qMakePair(QLatin1String("Templates"),QJsonValue(static_cast<qint64>(etpp*validsubdirs))),
                             qMakePair(QLatin1String("Perperson"),QJsonValue(static_cast<int>(etpp))),
                             qMakePair(QLatin1String("Errors"),QJsonValue(static_cast<qint64>(eterrors))),
-                            qMakePair(QLatin1String("Gentime_ms"),QJsonValue(etgentime*1e-6))
+                            qMakePair(QLatin1String("Gentime_ms"),QJsonValue(etgentime*1e-6)),
+                            qMakePair(QLatin1String("Size_bytes"),QJsonValue(static_cast<qint64>(etsizebytes)))
                         });
 
     QJsonObject vtjsobj({
@@ -327,7 +334,8 @@ int main(int argc, char *argv[])
                             qMakePair(QLatin1String("Perperson"),QJsonValue(static_cast<int>(vtpp))),
                             qMakePair(QLatin1String("Distractors"),QJsonValue(static_cast<qint64>(distractors))),
                             qMakePair(QLatin1String("Errors"),QJsonValue(static_cast<qint64>(vterrors))),
-                            qMakePair(QLatin1String("Gentime_ms"),QJsonValue(vtgentime*1e-6))
+                            qMakePair(QLatin1String("Gentime_ms"),QJsonValue(vtgentime*1e-6)),
+                            qMakePair(QLatin1String("Size_bytes"),QJsonValue(static_cast<qint64>(vtsizebytes)))
                         });
 
     QJsonObject matchjsobj({
