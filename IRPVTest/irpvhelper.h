@@ -78,7 +78,7 @@ operator<<(
 
 //---------------------------------------------------
 
-IRPV::Image readimage(const QString &_filename, QImage::Format _targetformat=QImage::Format_RGB888, bool _verbose=false)
+IRPV::Image readimage(const QString &_filename, QImage::Format _mTARgetformat=QImage::Format_RGB888, bool _verbose=false)
 {
     if(_verbose)
         std::cout << _filename << std::endl;
@@ -91,10 +91,10 @@ IRPV::Image readimage(const QString &_filename, QImage::Format _targetformat=QIm
     }
 
     QImage _tmpqimg;
-    if(_qimg.format() == _targetformat) {
+    if(_qimg.format() == _mTARgetformat) {
         _tmpqimg = _qimg;
     } else {
-        _tmpqimg = std::move(_qimg.convertToFormat(_targetformat));
+        _tmpqimg = std::move(_qimg.convertToFormat(_mTARgetformat));
         if(_verbose)
             std::cout << _qimg.format() << " converted to: " << _tmpqimg.format() << std::endl;
     }
@@ -122,15 +122,7 @@ IRPV::Image readimage(const QString &_filename, QImage::Format _targetformat=QIm
 struct ROCPoint
 {
     ROCPoint() {}
-
-    ROCPoint(double _TAR, double _FAR, double _similarity) :
-        TAR(_TAR),
-        FAR(_FAR),
-        similarity(_similarity){}
-
-    double TAR;
-    double FAR;
-    double similarity;
+    double mTAR, mFAR, similarity;
 };
 
 //---------------------------------------------------
@@ -155,8 +147,8 @@ std::vector<ROCPoint> computeROC(uint _points, const std::vector<uint8_t> &_issa
             else if((_same == 0) && (_issameperson[j] == 0))
                 _truenegative++;
         }
-        _vROC[i].TAR = static_cast<double>(_truepositive) / _totalpositive;
-        _vROC[i].FAR = 1.0 - static_cast<double>(_truenegative) / _totalnegative;
+        _vROC[i].mTAR = static_cast<double>(_truepositive) / _totalpositive;
+        _vROC[i].mFAR = 1.0 - static_cast<double>(_truenegative) / _totalnegative;
         _vROC[i].similarity = _thresh;
     }
     return _vROC;
@@ -168,20 +160,20 @@ double findArea(const std::vector<ROCPoint> &_roc)
 {
     double _area = 0;
     for(size_t i = 1; i < _roc.size(); ++i) {
-        _area += (_roc[i-1].FAR - _roc[i].FAR)*(_roc[i-1].TAR + _roc[i].TAR)/2.0;
+        _area += (_roc[i-1].mFAR - _roc[i].mFAR)*(_roc[i-1].mTAR + _roc[i].mTAR)/2.0;
     }
     return _area;
 }
 
 //---------------------------------------------------
 
-double findFRR(const std::vector<ROCPoint> &_roc, double _targetfar)
+double findFRR(const std::vector<ROCPoint> &_roc, double _targetmFAR)
 {
     for(size_t i = (_roc.size()-1); i >= 1; --i) { // not to 0 because of unsigned data type, we will hadle last value in final return
-        if(_roc[i].FAR > _targetfar)
-            return 1.0 - _roc[i].TAR;
+        if(_roc[i].mFAR > _targetmFAR)
+            return 1.0 - _roc[i].mTAR;
     }
-    return 1.0 - _roc[0].TAR;
+    return 1.0 - _roc[0].mTAR;
 }
 
 //---------------------------------------------------
@@ -191,8 +183,8 @@ QJsonArray serializeROC(const std::vector<ROCPoint> &_roc)
     QJsonArray _jsonarr;
     for(size_t i = 0; i < _roc.size(); ++i) {
         QJsonObject _jsonobj({
-                                 qMakePair(QLatin1String("FAR"),QJsonValue(_roc[i].FAR)),
-                                 qMakePair(QLatin1String("TAR"),QJsonValue(_roc[i].TAR)),
+                                 qMakePair(QLatin1String("FAR"),QJsonValue(_roc[i].mFAR)),
+                                 qMakePair(QLatin1String("TAR"),QJsonValue(_roc[i].mTAR)),
                                  qMakePair(QLatin1String("similarity"),QJsonValue(_roc[i].similarity))
                              });
         _jsonarr.push_back(qMove(_jsonobj));
