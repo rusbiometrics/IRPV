@@ -1,6 +1,7 @@
 #ifndef IRPVHELPER_H
 #define IRPVHELPER_H
 
+#include <cmath>
 #include <cstring>
 #include <iostream>
 
