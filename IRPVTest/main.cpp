@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
                           << "\t-r - path where Vendor's API should search resources" << std::endl
                           << "\t-v - set how namy verification templates per person should be created (default: 1)" << std::endl
                           << "\t-e - set how namy enrollment templates per person should be created (default: 1)" << std::endl
-                          << "\t-p - set how many points for ROC curve should be computed (default: 1000)" << std::endl
+                          << "\t-p - set how many points for ROC curve should be computed (default: 512)" << std::endl
                           << "\t-s - be more verbose (basically print all measurements)" << std::endl
                           << "\t-h - this help" << std::endl;
                 return 0;
