@@ -175,7 +175,7 @@ public:
 
     /**
      * @brief This function initializes the implementation under test.  It will
-     * be called by the SVTest application before any call to createTemplate() or
+     * be called by the IRPVTest application before any call to createTemplate() or
      * matchTemplates().  The implementation under test should set all parameters.
      * This function will be called N=1 times by the SVTest application.
      *
