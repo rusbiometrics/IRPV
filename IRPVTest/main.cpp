@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
         std::cout << "  Matching for label: " << etemplates[i].label << std::endl;
         for(size_t j = 0; j < vtemplates.size(); ++j) {
             elapsedtimer.start();
-            status = recognizer->matchTemplates(etemplates[i].data,vtemplates[j].data,similarities[matchcounter]);
+            status = recognizer->matchTemplates(vtemplates[j].data,etemplates[i].data,similarities[matchcounter]);
             matchtime += elapsedtimer.nsecsElapsed();
             if(etemplates[i].label == vtemplates[j].label) {
                 issameperson[matchcounter] = 1;
