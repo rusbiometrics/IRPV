@@ -182,7 +182,7 @@ public:
      * @param[in] configDir
      * A read-only directory containing any developer-supplied configuration
      * parameters or run-time data files.  The name of this directory is
-     * assigned by SVTest, not hardwired by the provider.  The names of the
+     * assigned by IRPVTest, not hardwired by the provider.  The names of the
      * files in this directory are hardwired in the implementation and are
      * unrestricted.
      */
