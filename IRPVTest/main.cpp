@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
         return 2;
     }
     if(!indir.exists()) {
-        std::cerr << "Output directory you've provided does not exists! Abort...";
+        std::cerr << "Input directory you've provided does not exists! Abort...";
         return 3;
     }
     if(!outdir.exists()) {       
