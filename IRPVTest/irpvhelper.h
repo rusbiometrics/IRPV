@@ -95,7 +95,7 @@ IRPV::Image readimage(const QString &_filename, QImage::Format _mTARgetformat=QI
     if(_qimg.format() == _mTARgetformat) {
         _tmpqimg = _qimg;
     } else {
-        _tmpqimg = std::move(_qimg.convertToFormat(_mTARgetformat));
+        _tmpqimg = _qimg.convertToFormat(_mTARgetformat);
         if(_verbose)
             std::cout << _qimg.format() << " converted to: " << _tmpqimg.format() << std::endl;
     }
@@ -110,12 +110,16 @@ IRPV::Image readimage(const QString &_filename, QImage::Format _mTARgetformat=QI
     // extra bytes is added to the end of line to make length divisible by 4
     // Read more here: https://bugreports.qt.io/browse/QTBUG-68379?filter=-2
     // As we do not want to copy this extra bytes to IRPV::Image we should throw them out
-    int _validbytesperline = _tmpqimg.width()*_tmpqimg.depth()/8;
-    std::shared_ptr<uint8_t>_ptr(new uint8_t[_tmpqimg.height()*_validbytesperline], std::default_delete<uint8_t[]>());
+    int _validbytesperline = _tmpqimg.width()*_tmpqimg.depth() / 8;
+    std::shared_ptr<uint8_t>_ptr(new uint8_t[_tmpqimg.height() * _validbytesperline],std::default_delete<uint8_t[]>());
     for(int i = 0; i < _tmpqimg.height(); ++i) {
-        std::memcpy(_ptr.get()+i*_validbytesperline,_tmpqimg.constScanLine(i),_validbytesperline);
+        std::memcpy(_ptr.get() + i * _validbytesperline,
+                    _tmpqimg.constScanLine(i),
+                    static_cast<size_t>(_validbytesperline));
     }
-    return IRPV::Image(_tmpqimg.width(),_tmpqimg.height(),_tmpqimg.depth(),_ptr);
+    return IRPV::Image(static_cast<uint16_t>(_tmpqimg.width()),
+                       static_cast<uint16_t>(_tmpqimg.height()),
+                       static_cast<uint8_t>(_tmpqimg.depth()),_ptr);
 }
 
 //---------------------------------------------------
@@ -128,7 +132,7 @@ struct ROCPoint
 
 //---------------------------------------------------
 
-std::vector<ROCPoint> computeROC(uint _points, const std::vector<uint8_t> &_issameperson, size_t _totalpositive, size_t _totalnegative, const std::vector<double> &_similarity)
+std::vector<ROCPoint> computeROC(size_t _points, const std::vector<uint8_t> &_issameperson, size_t _totalpositive, size_t _totalnegative, const std::vector<double> &_similarity)
 {
     std::vector<ROCPoint> _vROC(_points,ROCPoint());
 
@@ -137,7 +141,7 @@ std::vector<ROCPoint> computeROC(uint _points, const std::vector<uint8_t> &_issa
     const double _simstep = (_maxsim - _minsim)/_points;
 
     #pragma omp parallel for
-    for(int i = 0; i < (int)_points; ++i) {
+    for(int i = 0; i < static_cast<int>(_points); ++i) { // openmp demands signed integral type to be used
         const double _thresh = _minsim + i*_simstep;
         uint8_t _same;
         size_t  _truepositive = 0, _truenegative = 0;
@@ -191,6 +195,20 @@ QJsonArray serializeROC(const std::vector<ROCPoint> &_roc)
         _jsonarr.push_back(qMove(_jsonobj));
     }
     return _jsonarr;
+}
+
+//--------------------------------------------------
+void showTimeConsumption(qint64 secondstotal)
+{
+    qint64 days    = secondstotal / 86400;
+    qint64 hours   = (secondstotal - days * 86400) / 3600;
+    qint64 minutes = (secondstotal - days * 86400 - hours * 3600) / 60;
+    qint64 seconds = secondstotal - days * 86400 - hours * 3600 - minutes * 60;
+    std::cout << std::endl << "Test has been complited successfully" << std::endl
+              << " It took: " << days << " days "
+              << hours << " hours "
+              << minutes << " minutes and "
+              << seconds << " seconds" << std::endl;
 }
 
 #endif // IRPVHELPER_H

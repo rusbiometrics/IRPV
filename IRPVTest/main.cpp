@@ -7,17 +7,30 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WIN
     setlocale(LC_CTYPE,"Rus");
 #endif
+    // Default input values
     QDir indir, outdir;
-    // Let's explicitly set undefined paths to force the user to set them manually
-    indir.setPath("");
-    outdir.setPath("");
-    // Minimum data files per person
-    uint vtpp = 1, etpp = 1;
-    uint rocpoints = 512;
-    bool verbose = false;
+    indir.setPath(""); outdir.setPath("");
+    size_t vtpp = 1, etpp = 1, rocpoints = 512;
+    bool verbose = false, rewriteoutput = false;
     QString apiresourcespath;
-    QImage::Format qimgtargetformat = QImage::Format_RGB888;
-    while((--argc > 0) && (**(++argv) == '-')) {
+    QImage::Format qimgtargetformat = QImage::Format_RGB888; 
+    // If no args passed, show help
+    if(argc == 1) {
+        std::cout << APP_NAME << " version " << APP_VERSION << std::endl;
+        std::cout << "Options:" << std::endl
+                  << "\t-g - force to open all images in 8-bit grayscale mode, if not set all images will be opened in 24-bit rgb color mode" << std::endl
+                  << "\t-i - input directory with the images, note that this directory should have irpv-compliant structure" << std::endl
+                  << "\t-o - output directory where result will be saved" << std::endl
+                  << "\t-r - path where Vendor's API should search resources" << std::endl
+                  << "\t-v - set how namy verification templates per person should be created (default: " << vtpp << ")" << std::endl
+                  << "\t-e - set how namy enrollment templates per person should be created (default: " << etpp << ")" << std::endl
+                  << "\t-p - set how many points for ROC curve should be computed (default: " << rocpoints << ")" << std::endl
+                  << "\t-s - be more verbose (print all measurements)" << std::endl
+                  << "\t-w - force output file to be rewritten if already existed" << std::endl;
+        return 0;
+    }
+    // Let's parse user's command input
+    while((--argc > 0) && (**(++argv) == '-'))
         switch(*(++(*argv))) {
             case 'g':
                     qimgtargetformat = QImage::Format_Grayscale8;
@@ -42,23 +55,12 @@ int main(int argc, char *argv[])
                 break;
             case 's':
                     verbose = true;
-                break;           
-            case 'h':
-                std::cout << APP_NAME << " version " << APP_VERSION << std::endl;
-                std::cout << "Options:" << std::endl
-                          << "\t-g - force to open all images in 8-bit grayscale mode, if not set all images will be opened in 24-bit rgb color mode" << std::endl
-                          << "\t-i - input directory with the images, note that this directory should have irpv-compliant structure" << std::endl
-                          << "\t-o - output directory where results will be stored" << std::endl
-                          << "\t-r - path where Vendor's API should search resources" << std::endl
-                          << "\t-v - set how namy verification templates per person should be created (default: 1)" << std::endl
-                          << "\t-e - set how namy enrollment templates per person should be created (default: 1)" << std::endl
-                          << "\t-p - set how many points for ROC curve should be computed (default: 512)" << std::endl
-                          << "\t-s - be more verbose (basically print all measurements)" << std::endl
-                          << "\t-h - this help" << std::endl;
-                return 0;
+                break;
+            case 'w':
+                    rewriteoutput = true;
+                break;
         }
-    }    
-    // Let's check if user provide valid paths?
+    // Let's check if user have provided valid paths?
     if(indir.absolutePath().isEmpty()) {
         std::cerr << "Empty input directory path! Abort...";
         return 1;
@@ -81,7 +83,7 @@ int main(int argc, char *argv[])
     // Ok we can go forward
     std::cout << "Input dir:\t" << indir.absolutePath().toStdString() << std::endl;
     std::cout << "Output dir:\t" << outdir.absolutePath().toStdString() << std::endl;    
-    // Let's also check if structure of the input directory is valid
+    // Let's also check if structure of the input directory is irpv-valid
     QDateTime startdt(QDateTime::currentDateTime());
     std::cout << std::endl << "Stage 1 - input diretory parsing" << std::endl;
     QStringList subdirs = indir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::NoSort);
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
     size_t validsubdirs = 0;
     QStringList filefilters;
     filefilters << "*.jpg" << "*.jpeg" << "*.gif" << "*.png" << ".bmp";
-    const uint minfilespp = etpp + vtpp;
+    const size_t minfilespp = (vtpp == 0 ? etpp : etpp + vtpp);
     for(int i = 0; i < subdirs.size(); ++i) {
         QStringList _files = QDir(indir.absolutePath().append("/%1").arg(subdirs.at(i))).entryList(filefilters,QDir::Files | QDir::NoDotAndDotDot);
         if(static_cast<uint>(_files.size()) >= minfilespp) {
@@ -102,7 +104,7 @@ int main(int argc, char *argv[])
         return 5;
     }
     QStringList distractorfiles = indir.entryList(filefilters,QDir::Files | QDir::NoDotAndDotDot);
-    const uint distractors = distractorfiles.size();
+    const size_t distractors = static_cast<uint>(distractorfiles.size());
     std::cout << "  Distractor files: " << distractors << std::endl;
     if((validsubdirs*vtpp + distractors) == 0) {
         std::cerr << std::endl << "There is 0 verification templates! Test could not be performed! Abort..." << std::endl;
@@ -127,7 +129,7 @@ int main(int argc, char *argv[])
 
     // We need also check if output file does not exist
     QFile outputfile(outdir.absolutePath().append("/%1.json").arg(VENDOR_API_NAME));
-    if(outputfile.exists()) {
+    if(outputfile.exists() && (rewriteoutput == false)) {
         std::cerr << "Output file already exists in the target location! Abort...";
         return 8;
     } else if(outputfile.open(QFile::WriteOnly) == false) { // and could be opened
@@ -135,7 +137,7 @@ int main(int argc, char *argv[])
         return 9;
     }
 
-    // Seems that all requirements are matched, let's start the test
+    // Seems that all requirements are matched to test, let's start files processing
     std::cout << std::endl << "Stage 3 - templates generation" << std::endl;
 
     std::vector<BiometricTemplate> etemplates; // here we will store enrollment templates
@@ -156,11 +158,11 @@ int main(int argc, char *argv[])
     for(int i = 0; i < subdirs.size(); ++i) {
         QDir _subdir(indir.absolutePath().append("/%1").arg(subdirs.at(i)));
         QStringList _files = _subdir.entryList(filefilters,QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
-        if(static_cast<uint>(_files.size()) >= minfilespp) {
+        if(static_cast<size_t>(_files.size()) >= minfilespp) {
 
             std::cout << std::endl << "  Label: " << label << " - " << subdirs.at(i) << std::endl;
 
-            for(uint j = 0; j < etpp; ++j) {
+            for(size_t j = 0; j < etpp; ++j) {
                 if(verbose)
                     std::cout << "   - enrollment template: " << _files.at(j) << std::endl;
                 std::vector<uint8_t> _templ;
@@ -168,7 +170,7 @@ int main(int argc, char *argv[])
                 elapsedtimer.start();
                 status = recognizer->createTemplate(irpvimg,IRPV::TemplateRole::Enrollment_11,_templ);
                 etgentime += elapsedtimer.nsecsElapsed();
-                etemplates[etpos++] = std::move(BiometricTemplate(label,IRPV::TemplateRole::Enrollment_11,std::move(_templ)));
+                etemplates[etpos++] = BiometricTemplate(label,IRPV::TemplateRole::Enrollment_11,std::move(_templ));
                 if(status.code != IRPV::ReturnCode::Success) {
                     eterrors++;
                     if(verbose) {
@@ -178,7 +180,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            for(uint j = etpp; j < minfilespp; j++) {
+            for(size_t j = etpp; j < minfilespp; j++) {
                 if(verbose)
                     std::cout << "   - verification template: " << _files.at(j) << std::endl;
                 std::vector<uint8_t> _templ;
@@ -186,7 +188,7 @@ int main(int argc, char *argv[])
                 elapsedtimer.start();                
                 status = recognizer->createTemplate(irpvimg,IRPV::TemplateRole::Verification_11,_templ);
                 vtgentime += elapsedtimer.nsecsElapsed();
-                vtemplates[vtpos++] = std::move(BiometricTemplate(label,IRPV::TemplateRole::Verification_11,std::move(_templ)));
+                vtemplates[vtpos++] = BiometricTemplate(label,IRPV::TemplateRole::Verification_11,std::move(_templ));
                 if(status.code != IRPV::ReturnCode::Success) {
                     vterrors++;
                     if(verbose) {
@@ -207,7 +209,7 @@ int main(int argc, char *argv[])
         elapsedtimer.start();
         status = recognizer->createTemplate(irpvimg,IRPV::TemplateRole::Verification_11,_templ);
         vtgentime += elapsedtimer.nsecsElapsed();
-        vtemplates[vtpos++] = std::move(BiometricTemplate(label,IRPV::TemplateRole::Verification_11,std::move(_templ)));
+        vtemplates[vtpos++] = BiometricTemplate(label,IRPV::TemplateRole::Verification_11,std::move(_templ));
         if(status.code != IRPV::ReturnCode::Success) {
             vterrors++;
             if(verbose) {
@@ -275,16 +277,12 @@ int main(int argc, char *argv[])
     std::cout << std::endl << "Stage 5 - ROC computation" << std::endl;
 
     // But first let's release unused memory
-    uint etsizebytes = etemplates[0].data.size();
-    etemplates.clear();
-    uint vtsizebytes = vtemplates[0].data.size();
-    vtemplates.clear();   
+    size_t etsizebytes = etemplates[0].data.size();
+    etemplates.clear(); etemplates.shrink_to_fit();
+    size_t vtsizebytes = vtemplates[0].data.size();
+    vtemplates.clear(); vtemplates.shrink_to_fit();
 
-    std::vector<ROCPoint> vROC = std::move( computeROC(rocpoints,
-                                                       issameperson,
-                                                       totalpositivepairs,
-                                                       totalnegativepairs,
-                                                       similarities) );
+    std::vector<ROCPoint> vROC = computeROC(rocpoints, issameperson, totalpositivepairs, totalnegativepairs, similarities);
 
     double rocarea = findArea(vROC);
     std::cout << "  Area under the ROC curve: " << rocarea << std::endl;
@@ -306,18 +304,8 @@ int main(int argc, char *argv[])
     std::cout << "  Best FRR (FAR): " << bestFRR << " (" << bestFAR << ")" << std::endl;
     QDateTime enddt = QDateTime::currentDateTime();
 
-    qint64 secondstotal = startdt.secsTo(enddt);
-    int days    = secondstotal / 86400;
-    int hours   = (secondstotal - days * 86400) / 3600;
-    int minutes = (secondstotal - days * 86400 - hours * 3600) / 60;
-    int seconds = secondstotal - days * 86400 - hours * 3600 - minutes * 60;
-
-    std::cout << std::endl << "Test has been complited successfully" << std::endl
-              << " It took: " << days << " days "
-              << hours << " hours "
-              << minutes << " minutes and "
-              << seconds << " seconds" << std::endl;
-
+    // Let's print time consumption
+    showTimeConsumption(startdt.secsTo(enddt));
     // In the end we need to serialize test data
     std::cout << " Wait untill output data will be saved..." << std::endl;
 
@@ -362,6 +350,5 @@ int main(int argc, char *argv[])
     outputfile.write(QJsonDocument(jsonobj).toJson());
     outputfile.close();
     std::cout << " Data saved" << std::endl;
-
     return 0;
 }
