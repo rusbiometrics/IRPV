@@ -1,6 +1,4 @@
 /*
- * Face Recognition Performance Test
- *
  * This software is not subject to copyright protection and is in the public domain.
  */
 

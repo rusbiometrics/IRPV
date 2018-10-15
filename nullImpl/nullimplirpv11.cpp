@@ -1,6 +1,4 @@
 /*
- * Image recognition performance verification
- *
  * This software is not subject to copyright protection
  */
 
