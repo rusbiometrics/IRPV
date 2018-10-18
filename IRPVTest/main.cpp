@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
         return 5;
     }
     QStringList distractorfiles = indir.entryList(filefilters,QDir::Files | QDir::NoDotAndDotDot);
-    const size_t distractors = static_cast<uint>(distractorfiles.size());
+    const size_t distractors = static_cast<size_t>(distractorfiles.size());
     std::cout << "  Distractor files: " << distractors << std::endl;
     if((validsubdirs*vtpp + distractors) == 0) {
         std::cerr << std::endl << "There is 0 verification templates! Test could not be performed! Abort..." << std::endl;
