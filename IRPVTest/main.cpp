@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
     std::cout << "Output dir:\t" << outdir.absolutePath().toStdString() << std::endl;    
     // Let's also check if structure of the input directory is irpv-valid
     QDateTime startdt(QDateTime::currentDateTime());
-    std::cout << std::endl << "Stage 1 - input diretory parsing" << std::endl;
+    std::cout << std::endl << "Stage 1 - input direсtory parsing" << std::endl;
     QStringList subdirs = indir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::NoSort);
     std::cout << "  Total subdirs: " << subdirs.size() << std::endl;
     size_t validsubdirs = 0;
