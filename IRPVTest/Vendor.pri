@@ -26,7 +26,7 @@ win32 {
             -L$${LIB_DIR}
 
     # Specify libraries that should be linked
-    LIBS += -l$${API_NAME}
+    LIBS += -l$${API_NAME}   
 }
 
 # Section for the Linux ====================================================

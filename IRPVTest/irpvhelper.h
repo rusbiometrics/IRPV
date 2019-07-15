@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
 
 #include <QDateTime>
 #include <QJsonArray>
