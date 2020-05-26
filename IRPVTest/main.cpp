@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     std::cout << "Output dir:\t" << outdir.absolutePath().toStdString() << std::endl;    
     // Let's also check if structure of the input directory is irpv-valid
     QDateTime startdt(QDateTime::currentDateTime());
-    std::cout << std::endl << "Stage 1 - input direсtory parsing" << std::endl;
+    std::cout << std::endl << "Stage 1 - input directory parsing" << std::endl;
     QStringList subdirs = indir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::NoSort);
     std::cout << "  Total subdirs: " << subdirs.size() << std::endl;
     size_t validsubdirs = 0;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     IRPV::ReturnStatus status = recognizer->initialize(apiresourcespath.toStdString());
     qint64 inittimems = elapsedtimer.elapsed();
     std::cout << status.code << std::endl;
-    std::cout << " Time: " << inittimems << " ms" << std::endl;
+    std::cout << "  Time: " << inittimems << " ms" << std::endl;
     if(status.code != IRPV::ReturnCode::Success) {
         std::cout << "Vendor's error description: " << status.info << std::endl;
         std::cout << "Can not initialize Vendor's API! Abort..." << std::endl;
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
     std::cout << "  Negative pairs: " << totalnegativepairs << std::endl;
     std::cout << "  Errors: " << mterrors << std::endl;
     matchtime /= comparisions;
-    std::cout << std::endl << "Avg match time:" << matchtime*1e-3 << " us" << std::endl;
+    std::cout << std::endl << "Avg match time: " << matchtime*1e-3 << " us" << std::endl;
 
 
     // Ok, now we can compute ROC table

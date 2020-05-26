@@ -15,7 +15,7 @@ win32 {
     win32-msvc2015: COMPILER = vc14
     win32-msvc2017: COMPILER = vc16
     win32-g++:      COMPILER = mingw
-    win32:contains(QMAKE_TARGET.arch, x86_64){
+    win32:contains(QMAKE_TARGET.arch, x86_64) {
         ARCH = x64
     } else {
         ARCH = x86
@@ -36,6 +36,10 @@ linux {
 
     # Specify libraries that should be linked
     LIBS += -l$${API_NAME}
+
+    # 3rd parties, for the instance it could be:
+    # QT += network
+    # include($${PWD}/../../Sources/API_samples/irpv_Face/$${API_NAME}/opencv.pri)
 }
 
 # Do not modify =============================================
