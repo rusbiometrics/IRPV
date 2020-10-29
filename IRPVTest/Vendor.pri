@@ -4,7 +4,7 @@
 # so only API name should be specified here below
 
 # Specify API name according to the naming convention 'irpv_11_[vendor]_[version]_(cpu/gpu)' =======
-API_NAME = irpv_11_null_0_cpu
+API_NAME = irpv_11_dlib_0_cpu
 
 # If Vendor's API depends on any 3rd parties software you may specify this below
 
@@ -38,8 +38,8 @@ linux {
     LIBS += -l$${API_NAME}
 
     # 3rd parties, for the instance it could be:
-    # QT += network
-    # include($${PWD}/../../Sources/API_samples/irpv_Face/$${API_NAME}/opencv.pri)
+     QT += network
+    include($${PWD}/../../Sources/API_samples/irpv_Face/$${API_NAME}/opencv.pri)
 }
 
 # Do not modify =============================================

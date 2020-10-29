@@ -1,3 +1,4 @@
+
 #include <iostream>
 
 #include "irpvhelper.h"
@@ -10,10 +11,10 @@ int main(int argc, char *argv[])
     // Default input values
     QDir indir, outdir;
     indir.setPath(""); outdir.setPath("");
-    size_t vtpp = 1, etpp = 1, rocpoints = 512;
+    size_t vtpp = 1, etpp = 1, rocpoints = 10000;
     bool verbose = false, rewriteoutput = false, shuffletemplates = false;
     QString apiresourcespath;
-    QImage::Format qimgtargetformat = QImage::Format_RGB888; 
+    QImage::Format qimgtargetformat = QImage::Format_RGB888;
     // If no args passed, show help
     if(argc == 1) {
         std::cout << APP_NAME << " version " << APP_VERSION << std::endl;
