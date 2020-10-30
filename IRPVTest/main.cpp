@@ -294,26 +294,20 @@ int main(int argc, char *argv[])
     size_t vtsizebytes = vtemplates[0].data.size();
     vtemplates.clear(); vtemplates.shrink_to_fit();
 
-    std::vector<ROCPoint> vROC = computeROC(rocpoints, issameperson, totalpositivepairs, totalnegativepairs, similarities);
+    const uint confexaples = 3; // how many exaples are needed to count result confident
+    std::vector<ROCPoint> vROC = computeROC(rocpoints, issameperson, totalpositivepairs, totalnegativepairs, similarities, confexaples);
 
     double rocarea = findArea(vROC);
-    std::cout << "  Area under the ROC curve: " << rocarea << std::endl;
-    // We also can find FRR (FAR) according to test data
-    const uint confexaples = 10; // how many exaples are needed to count result confident
+    std::cout << "  Area under the ROC curve: " << rocarea << std::endl;   
     // First let's estimate the best FAR value we can select
-    double bestFAR = std::exp(-std::log(10.0) * std::floor(std::log10( static_cast<double>(totalnegativepairs) / confexaples)));
-    if(bestFAR > 1.0)
-        bestFAR = 1.0;
+    double bestFAR = std::exp(std::log(10.0) * std::ceil(std::log10( static_cast<double>(confexaples) / totalnegativepairs)));
     // Ok now we can find FRR for selected FAR from the ROC curve
     double bestFRR = findFRR(vROC, bestFAR);
-    // But the value of the FRR we have found could be not confident, so additional check is needed
-    if(bestFRR < (static_cast<double>(confexaples) / totalpositivepairs)) {
-        if((static_cast<double>(confexaples) / totalpositivepairs) < 1.0)
-            bestFRR = static_cast<double>(confexaples) / totalpositivepairs;
-        else
-            bestFRR = 1.0;
-    }
-    std::cout << "  Best FRR (FAR): " << bestFRR << " (" << bestFAR << ")" << std::endl;
+    std::cout << "  Best FRR (FAR): "
+              << QString::number(bestFRR,'f',-std::ceil(std::log10( static_cast<double>(confexaples) / totalpositivepairs)))
+              << " ("
+              << QString::number(bestFAR,'f',-std::ceil(std::log10( static_cast<double>(confexaples) / totalnegativepairs)))
+              << ")" << std::endl;
     QDateTime enddt = QDateTime::currentDateTime();
 
     // Let's print time consumption

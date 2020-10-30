@@ -134,7 +134,9 @@ struct ROCPoint
 
 //---------------------------------------------------
 
-std::vector<ROCPoint> computeROC(size_t _points, const std::vector<uint8_t> &_issameperson, size_t _totalpositive, size_t _totalnegative, const std::vector<double> &_similarity)
+std::vector<ROCPoint> computeROC(size_t _points, const std::vector<uint8_t> &_issameperson,
+                                 size_t _totalpositive, size_t _totalnegative,
+                                 const std::vector<double> &_similarity, uint _confexamples)
 {
     std::vector<ROCPoint> _vROC(_points,ROCPoint());
 
@@ -154,8 +156,8 @@ std::vector<ROCPoint> computeROC(size_t _points, const std::vector<uint8_t> &_is
             else if((_same == 0) && (_issameperson[j] == 0))
                 _truenegative++;
         }
-        _vROC[i].mTAR = static_cast<double>(_truepositive) / _totalpositive;
-        _vROC[i].mFAR = 1.0 - static_cast<double>(_truenegative) / _totalnegative;
+        _vROC[i].mTAR = std::min(static_cast<double>(_truepositive) / _totalpositive, static_cast<double>(_totalpositive-_confexamples) / _totalpositive);
+        _vROC[i].mFAR = std::max(static_cast<double>(_totalnegative - _truenegative) / _totalnegative, static_cast<double>(_confexamples) / _totalnegative);
         _vROC[i].similarity = _thresh;
     }
     return _vROC;
@@ -176,11 +178,11 @@ double findArea(const std::vector<ROCPoint> &_roc)
 
 double findFRR(const std::vector<ROCPoint> &_roc, double _targetmFAR)
 {
-    for(size_t i = (_roc.size()-1); i >= 1; --i) { // not to 0 because of unsigned data type, we will hadle last value in final return
-        if(_roc[i].mFAR > _targetmFAR)
+    for(size_t i = 0; i < _roc.size()-1; ++i) { // not to 0 because of unsigned data type, we will hadle last value in final return
+        if((_roc[i].mFAR - _targetmFAR)*(_roc[i+1].mFAR - _targetmFAR) < 0)
             return 1.0 - _roc[i].mTAR;
     }
-    return 1.0 - _roc[0].mTAR;
+    return 1.0;
 }
 
 //---------------------------------------------------
