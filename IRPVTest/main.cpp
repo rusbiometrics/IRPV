@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     indir.setPath(""); outdir.setPath("");
     size_t vtpp = 1, etpp = 1, rocpoints = 10000;
     bool verbose = false, rewriteoutput = false, shuffletemplates = false;
+    uint confexamples = 3;
     QString apiresourcespath;
     QImage::Format qimgtargetformat = QImage::Format_RGB888;
     // If no args passed, show help
@@ -20,12 +21,13 @@ int main(int argc, char *argv[])
         std::cout << APP_NAME << " version " << APP_VERSION << std::endl;
         std::cout << "Options:" << std::endl
                   << "\t-g - force to open all images in 8-bit grayscale mode, if not set all images will be opened in 24-bit rgb color mode" << std::endl
-                  << "\t-i - input directory with the images, note that this directory should have irpv-compliant structure" << std::endl
-                  << "\t-o - output directory where result will be saved" << std::endl
-                  << "\t-r - path where Vendor's API should search resources" << std::endl
-                  << "\t-v - set how namy verification templates per person should be created (default: " << vtpp << ")" << std::endl
-                  << "\t-e - set how namy enrollment templates per person should be created (default: " << etpp << ")" << std::endl
-                  << "\t-p - set how many points for ROC curve should be computed (default: " << rocpoints << ")" << std::endl
+                  << "\t-i[str] - input directory with the images, note that this directory should have irpv-compliant structure" << std::endl
+                  << "\t-o[str] - output directory where result will be saved" << std::endl
+                  << "\t-r[str] - path where Vendor's API should search resources" << std::endl
+                  << "\t-v[int] - set how namy verification templates per person should be created (default: " << vtpp << ")" << std::endl
+                  << "\t-e[int] - set how namy enrollment templates per person should be created (default: " << etpp << ")" << std::endl
+                  << "\t-p[int] - set how many points for ROC curve should be computed (default: " << rocpoints << ")" << std::endl
+                  << "\t-f[int] - number of exmples to count result confident (default: " << confexamples << ")" << std::endl
                   << "\t-b - be more verbose (print all measurements)" << std::endl
                   << "\t-s - shuffle templates before matching" << std::endl
                   << "\t-w - force output file to be rewritten if already existed" << std::endl;
@@ -54,6 +56,9 @@ int main(int argc, char *argv[])
                 break;
             case 'p':
                     rocpoints = QString(++(*argv)).toUInt();
+                break;
+            case 'f':
+                confexamples = QString(++(*argv)).toUInt();
                 break;
             case 'b':
                     verbose = true;
@@ -84,6 +89,11 @@ int main(int argc, char *argv[])
             std::cerr << "Can not create output directory in the path you've provided! Abort...";
             return 4;
         }
+    }
+    // Let's check confexamples threshold
+    if(confexamples < 1) {
+        std::cerr << "Number of confexamples should be greater than zero! Abort...";
+        return 5;
     }
     // Ok we can go forward
     std::cout << "Input dir:\t" << indir.absolutePath().toStdString() << std::endl;
@@ -294,19 +304,18 @@ int main(int argc, char *argv[])
     size_t vtsizebytes = vtemplates[0].data.size();
     vtemplates.clear(); vtemplates.shrink_to_fit();
 
-    const uint confexaples = 3; // how many exaples are needed to count result confident
-    std::vector<ROCPoint> vROC = computeROC(rocpoints, issameperson, totalpositivepairs, totalnegativepairs, similarities, confexaples);
+    std::vector<ROCPoint> vROC = computeROC(rocpoints, issameperson, totalpositivepairs, totalnegativepairs, similarities, confexamples);
 
     double rocarea = findArea(vROC);
-    std::cout << "  Area under the ROC curve: " << rocarea << std::endl;   
+    std::cout << "  Area under the ROC curve: " << QString::number(rocarea,'f',validdigits(rocpoints,confexamples)) << std::endl;
     // First let's estimate the best FAR value we can select
-    double bestFAR = std::exp(std::log(10.0) * std::ceil(std::log10( static_cast<double>(confexaples) / totalnegativepairs)));
+    double bestFAR = std::exp(std::log(10.0) * -validdigits(totalnegativepairs,confexamples));
     // Ok now we can find FRR for selected FAR from the ROC curve
     double bestFRR = findFRR(vROC, bestFAR);
     std::cout << "  Best FRR (FAR): "
-              << QString::number(bestFRR,'f',-std::ceil(std::log10( static_cast<double>(confexaples) / totalpositivepairs)))
+              << QString::number(bestFRR,'f',validdigits(totalpositivepairs))
               << " ("
-              << QString::number(bestFAR,'f',-std::ceil(std::log10( static_cast<double>(confexaples) / totalnegativepairs)))
+              << QString::number(bestFAR,'f',validdigits(totalnegativepairs))
               << ")" << std::endl;
     QDateTime enddt = QDateTime::currentDateTime();
 

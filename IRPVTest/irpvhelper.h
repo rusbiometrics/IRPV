@@ -185,6 +185,15 @@ double findFRR(const std::vector<ROCPoint> &_roc, double _targetmFAR)
     return 1.0;
 }
 
+//--------------------------------------------------
+
+int validdigits(size_t measurements, uint confexamples=3)
+{
+    if(measurements > confexamples)
+        return -std::ceil(std::log10(static_cast<double>(confexamples)/static_cast<double>(measurements)));
+    return 0;
+}
+
 //---------------------------------------------------
 
 QJsonArray serializeROC(const std::vector<ROCPoint> &_roc)
